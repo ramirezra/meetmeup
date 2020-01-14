@@ -18,7 +18,7 @@ models:
   Meetup:
     model: github.com/ramirezra/meetmeup/models.Meetup
     fields:
-        meetups:
+        user:
           resolver: true
 resolver:
   filename: resolver.go

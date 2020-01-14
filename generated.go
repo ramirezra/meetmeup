@@ -35,6 +35,7 @@ type Config struct {
 }
 
 type ResolverRoot interface {
+	Meetup() MeetupResolver
 	Mutation() MutationResolver
 	Query() QueryResolver
 	User() UserResolver
@@ -67,6 +68,9 @@ type ComplexityRoot struct {
 	}
 }
 
+type MeetupResolver interface {
+	User(ctx context.Context, obj *models.Meetup) (*models.User, error)
+}
 type MutationResolver interface {
 	CreateMeetup(ctx context.Context, input NewMeetup) (*models.Meetup, error)
 }
@@ -450,13 +454,13 @@ func (ec *executionContext) _Meetup_user(ctx context.Context, field graphql.Coll
 		Object:   "Meetup",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.User, nil
+		return ec.resolvers.Meetup().User(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1975,23 +1979,32 @@ func (ec *executionContext) _Meetup(ctx context.Context, sel ast.SelectionSet, o
 		case "id":
 			out.Values[i] = ec._Meetup_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "name":
 			out.Values[i] = ec._Meetup_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "description":
 			out.Values[i] = ec._Meetup_description(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "user":
-			out.Values[i] = ec._Meetup_user(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Meetup_user(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
