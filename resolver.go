@@ -5,10 +5,9 @@ package meetmeup
 import (
 	"context"
 	"errors"
-	"log"
-	"strconv"
 
 	"github.com/ramirezra/meetmeup/models"
+	"github.com/ramirezra/meetmeup/postgres"
 )
 
 // Define data storage (in memory for now)
@@ -40,66 +39,61 @@ var users = []*models.User{
 	},
 }
 
-// Generated using gqlgen.
-type Resolver struct{}
+// Resolver struct defined. Over all struct that contains principal methods.
+type Resolver struct {
+	MeetupsRepo postgres.MeetupsRepo
+	UsersRepo   postgres.UsersRepo
+}
 
+// Meetup function defined
 func (r *Resolver) Meetup() MeetupResolver {
 	return &meetupResolver{r}
 }
+
+// Mutation function defined
 func (r *Resolver) Mutation() MutationResolver {
 	return &mutationResolver{r}
 }
+
+// Query function defined
 func (r *Resolver) Query() QueryResolver {
 	return &queryResolver{r}
 }
+
+// User function defined
 func (r *Resolver) User() UserResolver {
 	return &userResolver{r}
 }
 
 type meetupResolver struct{ *Resolver }
 
-func (r *meetupResolver) User(ctx context.Context, obj *models.Meetup) (*models.User, error) {
-	user := new(models.User)
-
-	for _, u := range users {
-		if u.ID == obj.UserID {
-			user = u
-			break
-		}
-	}
-	if user == nil {
-		return nil, errors.New("text: User with id does not exist")
-	}
-	return user, nil
+func (m *meetupResolver) User(ctx context.Context, obj *models.Meetup) (*models.User, error) {
+	return m.UsersRepo.GetUserByID(obj.UserID)
 }
 
 type mutationResolver struct{ *Resolver }
 
-func (r *mutationResolver) CreateMeetup(ctx context.Context, input NewMeetup) (*models.Meetup, error) {
-
-	size := len(meetups)
-	previousID, err := strconv.Atoi(meetups[size-1].ID)
-	if err != nil {
-		log.Fatalln(err)
+func (m *mutationResolver) CreateMeetup(ctx context.Context, input NewMeetup) (*models.Meetup, error) {
+	if len(input.Name) < 3 {
+		return nil, errors.New("name not long enough")
 	}
-	newID := strconv.Itoa(previousID + 1)
+	if len(input.Description) < 3 {
+		return nil, errors.New("description not long enough")
+	}
 
-	var newMeetup = models.Meetup{
-		ID:          newID,
+	meetup := &models.Meetup{
 		Name:        input.Name,
 		Description: input.Description,
 		UserID:      "1",
 	}
-
-	meetups = append(meetups, &newMeetup)
-
-	return &newMeetup, nil
+	return m.MeetupsRepo.CreateMeetup(meetup)
 }
 
 type queryResolver struct{ *Resolver }
 
 func (r *queryResolver) Meetups(ctx context.Context) ([]*models.Meetup, error) {
-	return meetups, nil
+
+	return r.MeetupsRepo.GetMeetups()
 }
 
 type userResolver struct{ *Resolver }
