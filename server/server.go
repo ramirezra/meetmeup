@@ -1,10 +1,11 @@
 package main
 
 import (
-	"github.com/go-pg/pg/v9"
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/go-pg/pg/v9"
 
 	"github.com/99designs/gqlgen/handler"
 
