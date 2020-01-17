@@ -8,7 +8,7 @@ import (
 
 	"github.com/99designs/gqlgen/handler"
 
-	"github.com/ramirezra/meetmeup"
+	"github.com/ramirezra/meetmeup/graphql"
 	"github.com/ramirezra/meetmeup/postgres"
 )
 
@@ -31,13 +31,15 @@ func main() {
 		port = defaultPort
 	}
 
-	c := meetmeup.Config{Resolvers: &meetmeup.Resolver{
+	c := graphql.Config{Resolvers: &graphql.Resolver{
 		MeetupsRepo: postgres.MeetupsRepo{DB: DB},
 		UsersRepo:   postgres.UsersRepo{DB: DB},
 	}}
 
+	queryHandler := handler.GraphQL(graphql.NewExecutableSchema(c))
+
 	http.Handle("/", handler.Playground("GraphQL playground", "/query"))
-	http.Handle("/query", handler.GraphQL(meetmeup.NewExecutableSchema(c)))
+	http.Handle("/query", graphql.DataloaderMiddleware(DB, queryHandler))
 
 	log.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
 	log.Fatal(http.ListenAndServe(":"+port, nil))
