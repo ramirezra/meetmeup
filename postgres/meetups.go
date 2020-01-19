@@ -47,8 +47,9 @@ func (m *MeetupsRepo) Delete(meetup *models.Meetup) error {
 	return err
 }
 
+// GetMeetupsForUser ...
 func (m *MeetupsRepo) GetMeetupsForUser(user *models.User) ([]*models.Meetup, error) {
 	var meetups []*models.Meetup
-	err := m.DB.Model(&meetups).Where("user_id = ?", user.ID).Select()
+	err := m.DB.Model(&meetups).Where("user_id = ?", user.ID).Order("id").Select()
 	return meetups, err
 }
