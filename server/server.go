@@ -5,11 +5,16 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/middleware"
+	"github.com/rs/cors"
+
 	"github.com/go-pg/pg/v9"
 
 	"github.com/99designs/gqlgen/handler"
 
 	"github.com/ramirezra/meetmeup/graphql"
+	customMW "github.com/ramirezra/meetmeup/middleware"
 	"github.com/ramirezra/meetmeup/postgres"
 )
 
@@ -32,9 +37,25 @@ func main() {
 		port = defaultPort
 	}
 
+	userRepo := postgres.UsersRepo{DB: DB}
+
+	var origin []string
+	origin = append(origin, "http://localhost:8000")
+
+	router := chi.NewRouter()
+	router.Use(cors.New(cors.Options{
+		AllowedOrigins:   []string(origin),
+		AllowCredentials: true,
+		Debug:            true,
+	}).Handler)
+
+	router.Use(middleware.RequestID)
+	router.Use(middleware.Logger)
+	router.Use(customMW.AuthMiddleware(userRepo))
+
 	c := graphql.Config{Resolvers: &graphql.Resolver{
 		MeetupsRepo: postgres.MeetupsRepo{DB: DB},
-		UsersRepo:   postgres.UsersRepo{DB: DB},
+		UsersRepo:   userRepo,
 	}}
 
 	queryHandler := handler.GraphQL(graphql.NewExecutableSchema(c))
