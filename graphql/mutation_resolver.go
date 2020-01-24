@@ -6,7 +6,15 @@ import (
 	"fmt"
 	"log"
 
+	customMW "github.com/ramirezra/meetmeup/middleware"
 	"github.com/ramirezra/meetmeup/models"
+)
+
+var (
+	// ErrBadCredentials documents the bad credentials were passed by user during login process
+	ErrBadCredentials = errors.New("email/password combination do not match")
+	// ErrUnauthenticated documents that user has not been authenticated
+	ErrUnauthenticated = errors.New("user not authenticated")
 )
 
 // Mutation function defined
@@ -16,7 +24,8 @@ func (r *Resolver) Mutation() MutationResolver {
 
 type mutationResolver struct{ *Resolver }
 
-func (m *mutationResolver) Register(ctx context.Context, input *models.RegisterInput) (*models.AuthResponse, error) {
+// Register method defined
+func (m *mutationResolver) Register(ctx context.Context, input models.RegisterInput) (*models.AuthResponse, error) {
 	// check if email already exists in database
 	_, err := m.UsersRepo.GetUserByEmail(input.Email)
 	if err == nil {
@@ -39,7 +48,7 @@ func (m *mutationResolver) Register(ctx context.Context, input *models.RegisterI
 
 	err = user.HashPassword(input.Password)
 	if err != nil {
-		log.Printf("erro whil hasing password: %v", err)
+		log.Printf("error while hasing password: %v", err)
 		return nil, errors.New("something went wrong")
 	}
 	// TODO: send verification code
@@ -76,7 +85,38 @@ func (m *mutationResolver) Register(ctx context.Context, input *models.RegisterI
 	return authResponse, nil
 }
 
+// Login method defined
+func (m *mutationResolver) Login(ctx context.Context, input models.LoginInput) (*models.AuthResponse, error) {
+	user, err := m.UsersRepo.GetUserByEmail(input.Email)
+	if err != nil {
+		return nil, ErrBadCredentials
+	}
+
+	err = user.ComparePassword(input.Password)
+	if err != nil {
+
+		return nil, ErrBadCredentials
+	}
+
+	token, err := user.GenToken()
+	if err != nil {
+		return nil, errors.New("somthing went wrong")
+	}
+
+	return &models.AuthResponse{
+		AuthToken: token,
+		User:      user,
+	}, nil
+
+}
+
+// CreateMeetup method checks if user is logged in, checks if meetup is valid, and then store meet up.
 func (m *mutationResolver) CreateMeetup(ctx context.Context, input models.NewMeetup) (*models.Meetup, error) {
+	currentUser, err := customMW.GetCurrentUserFromCTX(ctx)
+	if err != nil {
+		return nil, ErrUnauthenticated
+	}
+
 	if len(input.Name) < 3 {
 		return nil, errors.New("name not long enough")
 	}
@@ -87,7 +127,7 @@ func (m *mutationResolver) CreateMeetup(ctx context.Context, input models.NewMee
 	meetup := &models.Meetup{
 		Name:        input.Name,
 		Description: input.Description,
-		UserID:      "1",
+		UserID:      currentUser.ID,
 	}
 	return m.MeetupsRepo.CreateMeetup(meetup)
 }

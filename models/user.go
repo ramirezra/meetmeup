@@ -55,3 +55,11 @@ func (u *User) GenToken() (*AuthToken, error) {
 	}, nil
 
 }
+
+// ComparePassword checks the user's password input against the hash password stored in the database.
+func (u *User) ComparePassword(password string) error {
+	bytePassword := []byte(password)
+	byteHashedPassword := []byte(u.Password)
+
+	return bcrypt.CompareHashAndPassword(byteHashedPassword, bytePassword)
+}

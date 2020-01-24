@@ -39,12 +39,9 @@ func main() {
 
 	userRepo := postgres.UsersRepo{DB: DB}
 
-	var origin []string
-	origin = append(origin, "http://localhost:8000")
-
 	router := chi.NewRouter()
 	router.Use(cors.New(cors.Options{
-		AllowedOrigins:   []string(origin),
+		AllowedOrigins:   []string{"http://localhost:8000", "http:/localhost:8080"},
 		AllowCredentials: true,
 		Debug:            true,
 	}).Handler)
@@ -60,9 +57,9 @@ func main() {
 
 	queryHandler := handler.GraphQL(graphql.NewExecutableSchema(c))
 
-	http.Handle("/", handler.Playground("GraphQL playground", "/query"))
-	http.Handle("/query", graphql.DataloaderMiddleware(DB, queryHandler))
+	router.Handle("/", handler.Playground("GraphQL playground", "/query"))
+	router.Handle("/query", graphql.DataloaderMiddleware(DB, queryHandler))
 
 	log.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
-	log.Fatal(http.ListenAndServe(":"+port, nil))
+	log.Fatal(http.ListenAndServe(":"+port, router))
 }
