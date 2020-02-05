@@ -13,6 +13,7 @@ import (
 
 	"github.com/99designs/gqlgen/handler"
 
+	"github.com/ramirezra/meetmeup/domain"
 	"github.com/ramirezra/meetmeup/graphql"
 	customMW "github.com/ramirezra/meetmeup/middleware"
 	"github.com/ramirezra/meetmeup/postgres"
@@ -38,6 +39,7 @@ func main() {
 	}
 
 	userRepo := postgres.UsersRepo{DB: DB}
+	meetupRepo := postgres.MeetupsRepo{DB: DB}
 
 	router := chi.NewRouter()
 	router.Use(cors.New(cors.Options{
@@ -50,9 +52,9 @@ func main() {
 	router.Use(middleware.Logger)
 	router.Use(customMW.AuthMiddleware(userRepo))
 
+	d := domain.NewDomain(userRepo, meetupRepo)
 	c := graphql.Config{Resolvers: &graphql.Resolver{
-		MeetupsRepo: postgres.MeetupsRepo{DB: DB},
-		UsersRepo:   userRepo,
+		Domain: d,
 	}}
 
 	queryHandler := handler.GraphQL(graphql.NewExecutableSchema(c))
