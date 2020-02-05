@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	"github.com/ramirezra/meetmeup/middleware"
 
 	"github.com/ramirezra/meetmeup/models"
@@ -31,11 +32,22 @@ func (d *Domain) CreateMeetup(ctx context.Context, input models.NewMeetup) (*mod
 	return d.MeetupsRepo.CreateMeetup(meetup)
 }
 
+// DeleteMeetup deletes the meetup from the database.
 func (d *Domain) DeleteMeetup(ctx context.Context, id string) (bool, error) {
+	currentUser, err := middleware.GetCurrentUserFromCTX(ctx)
+	if err != nil {
+		return false, ErrUnauthenticated
+	}
+
 	meetup, err := d.MeetupsRepo.GetByID(id)
 	if err != nil || meetup == nil {
 		return false, errors.New("meetup not exist")
 	}
+
+	if !meetup.IsOwner(currentUser) {
+		return false, ErrForbidden
+	}
+
 	err = d.MeetupsRepo.Delete(meetup)
 	if err != nil {
 		return false, fmt.Errorf("error while deleting meetup")
@@ -44,10 +56,20 @@ func (d *Domain) DeleteMeetup(ctx context.Context, id string) (bool, error) {
 	return true, nil
 }
 
+// UpdateMeetup updates the meetup in the database
 func (d *Domain) UpdateMeetup(ctx context.Context, id string, input models.UpdateMeetup) (*models.Meetup, error) {
+	currentUser, err := middleware.GetCurrentUserFromCTX(ctx)
+	if err != nil {
+		return nil, ErrUnauthenticated
+	}
+
 	meetup, err := d.MeetupsRepo.GetByID(id)
 	if err != nil || meetup == nil {
 		return nil, errors.New("meetup not exist")
+	}
+
+	if !meetup.IsOwner(currentUser) {
+		return nil, ErrForbidden
 	}
 
 	didUpdate := false

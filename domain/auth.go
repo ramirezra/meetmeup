@@ -13,6 +13,8 @@ var (
 	ErrBadCredentials = errors.New("email/password combination do not match")
 	// ErrUnauthenticated documents that user has not been authenticated
 	ErrUnauthenticated = errors.New("user not authenticated")
+	// ErrForbidden documents that user is not authorized to access unowned data
+	ErrForbidden = errors.New("unauthorized")
 )
 
 // Register method defined
