@@ -1,0 +1,14 @@
+{
+  "name": "meetmeup_client",
+  "version": "1.0.0",
+  "description": "meetmeup_client",
+  "main": "index.js",
+  "dependencies": {},
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "api": "elm-graphql http://localhost:8080 --base meetUp --output ./src"
+  },
+  "author": "",
+  "license": "ISC"
+}

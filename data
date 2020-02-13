@@ -1,0 +1,39 @@
+Account Number: 76030010
+Annotation: reverse GJ 2614
+Credit Amount:    258,159.92
+Debit Amount:           .00
+Document Number:
+Effective Date:       12/31/19
+Entry Date:   01/20/20
+Entry Number: 2630
+Fiscal Period:         19-12
+Line Reference: phy count correction
+Sequence Number: 10
+Source Journal: GJ
+
+
+Account Number: 76030010
+Annotation: ADJ TO PHYSICAL
+Credit Amount:     18,421.29
+Debit Amount:           .00
+Document Number:
+Effective Date:       12/31/19
+Entry Date:   01/21/20
+Entry Number: 2631
+Fiscal Period:         19-12
+Line Reference: 7603-1500
+Sequence Number: 11
+Source Journal: GJ
+
+Account Number: 52050010
+Annotation: Year-End Closing Entry
+Credit Amount:  1,457,409.41
+Debit Amount:           .00
+Document Number:
+Effective Date:       12/31/19
+Entry Date:   01/21/20
+Entry Number: 2632
+Fiscal Period:         19-12
+Line Reference: Year-End Closing Entry
+Sequence Number: 1
+Source Journal: GJ
