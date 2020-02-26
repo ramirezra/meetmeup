@@ -1,19 +1,47 @@
-module Main exposing (Model, Msg, init, subscriptions, update, view)
+module Main exposing (main)
 
-import Api.Object
-import Api.Query
-import Api.Scalar
-import Api.ScalarCodecs
+import Api.Object exposing (User)
+import Api.Query as Query
+import Api.ScalarCodecs exposing (Id)
 import Browser
 import Graphql.Http
 import Graphql.Operation exposing (RootQuery)
+import Graphql.SelectionSet as SelectionSet exposing (SelectionSet)
 import Html exposing (..)
-import RemoteData
+import RemoteData exposing (RemoteData)
 
 
-main : Program () Model Msg
+type alias Model =
+    RemoteData (Graphql.Http.Error Response) Response
+
+
+type alias Response =
+    Id
+
+
+makeRequest : Cmd Msg
+makeRequest =
+    Query.user (Query.UserRequiredArguments "1") Api.Object.User
+        |> Graphql.Http.queryRequest "localhost:8080/graphql"
+        |> Graphql.Http.send (RemoteData.fromResult >> GotResponse)
+
+
+type Msg
+    = GotResponse Model
+
+
+init : Flags -> ( Model, Cmd Msg )
+init _ =
+    ( RemoteData.Loading, makeRequest )
+
+
+type alias Flags =
+    ()
+
+
+main : Program Flags Model Msg
 main =
-    Browser.document
+    Browser.element
         { init = init
         , view = view
         , update = update
@@ -21,25 +49,9 @@ main =
         }
 
 
-type alias Model =
-    { id : Int
-    }
-
-
-makeRequest : Cmd Msg
-makeRequest =
-    Api.Query.user (Api.Query.UserRequiredArguments (Api.Scalar.Id "1")) Api.Object.User
-        |> Graphql.Http.queryRequest "http://localhost:8080/graphql"
-        |> Graphql.Http.send (RemoteData.fromResult >> GotResponse)
-
-
-init : () -> ( Model, Cmd Msg )
-init _ =
-    ( Model 0, Cmd.none )
-
-
-type Msg
-    = GotResponse Model
+view : Model -> Html Msg
+view model =
+    div [] []
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -52,13 +64,3 @@ update msg model =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.none
-
-
-view : Model -> Browser.Document Msg
-view model =
-    { title = "MeetMeUp App"
-    , body =
-        [ div []
-            [ text "New Document" ]
-        ]
-    }
