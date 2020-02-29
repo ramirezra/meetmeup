@@ -10,7 +10,7 @@ import Graphql.Operation exposing (RootQuery)
 import Graphql.SelectionSet as SelectionSet exposing (SelectionSet)
 import Html exposing (..)
 import PrintAny
-import RemoteData exposing (RemoteData)
+import RemoteData exposing (RemoteData(..))
 
 
 
@@ -83,13 +83,15 @@ update msg model =
 
 view : Model -> Html Msg
 view model =
-    div []
-        [ Html.input [] []
-        , div
-            []
-            [ PrintAny.view model ]
-        ]
-
+    case model of 
+        Success data ->
+            div []
+                [ Html.input [] []
+                , div
+                    []
+                    [ text data.username ]
+                ]
+        _ -> text "Hello"
 
 
 -- SUBSCRIPTIONS
